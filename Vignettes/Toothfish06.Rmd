@@ -3,7 +3,7 @@ title: "Toothfish"
 output: rmarkdown::html_vignette
 bibliography: Ref.bib
 vignette: >
-  %\VignetteIndexEntry{Toothfish06}
+  %\VignetteIndexEntry{Toothfish_2006}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---

@@ -8,6 +8,10 @@ knitr::opts_chunk$set(
 
 ## -----------------------------------------------------------------------------
 library(Grym)
+library(ggplot2)
+library(dplyr)
+library(furrr)
+set.seed(31)
 
 ## -----------------------------------------------------------------------------
 survey.df <- read.csv(textConnection("
@@ -115,9 +119,6 @@ Year,Catch
 2005,2696000"),header=T)
 
 ## -----------------------------------------------------------------------------
-historic.df <- merge(recruit.df,catch.df)
-
-## -----------------------------------------------------------------------------
 length.df <- read.csv(textConnection("
 Age, Length
 0, 197.56
@@ -160,8 +161,10 @@ length.age <- approxfun(length.df$Age,length.df$Length,rule=2)
 plot(length.age,0,55)
 
 ## -----------------------------------------------------------------------------
+approxArray <- function(x,y,arr,rule=2) array(approx(x,y,arr,rule=rule)$y,dim(arr))
+
+## -----------------------------------------------------------------------------
 mkSelectivity <- function(ages,ls) {
-  approxArray <- function(x,y,arr,rule=2) array(approx(x,y,arr,rule=rule)$y,dim(arr))
   select5pt <- function(x) approxArray(x,c(0,0,1,1,0),ages)
 
   ## Age based selectivity
@@ -186,19 +189,17 @@ mkSelectivity <- function(ages,ls) {
 }
 
 ## -----------------------------------------------------------------------------
-ToothfishProjection <- function(Catches,historic.df,length.df,n.years=35) {
-
-
-  approxArray <- function(x,y,arr,rule=2) array(approx(x,y,arr,rule=rule)$y,dim(arr))
+ToothfishProjection <- function(Catches,catch.df,recruit.df,length.df,n.years=35,Year1=min(catch.df$Year)) {
   
   ## Daily time steps with 8 age classes
   nsteps <- 24
   Ages <- 4:35
+  plus <- 55-35
   Days <- seq(0,1,length=nsteps+1)
   h <- 1/nsteps
 
   ## Spawning and monitoring interval
-  spawnI <- 13
+  spawnI <- 14:15
   monitorI <- 1:25
 
   ## Ages, length at age and weight at age
@@ -217,7 +218,6 @@ ToothfishProjection <- function(Catches,historic.df,length.df,n.years=35) {
   M <- 0.13
   MMs <- M*Ms
 
-
   ## Length based maturity 
   gs <- rampOgive(ls,930,300)
   
@@ -226,39 +226,50 @@ ToothfishProjection <- function(Catches,historic.df,length.df,n.years=35) {
   fwy[] <- 1
   fwy <- fwy/mean(fwy)
 
-
   ## Calculate recruitment parameters from historic data
   ## By method of moments
-  rlsd <- sqrt(log(1+(sd(historic.df$Rec)/mean(historic.df$Rec))^2))
-  rlmn <- log(mean(historic.df$Rec))-rlsd^2/2
+  rmn <- mean(recruit.df$Rec,na.rm=TRUE)
+  rsd <- sd(recruit.df$Rec,na.rm=TRUE)
+  rmn <- 3016520
+  rsd <- 1.62693*rmn
+  rlsd <- sqrt(log(1+(rsd/rmn)^2))
+  rlmn <- log(rmn)-rlsd^2/2
   ## By maximum likelihood
-  #rlmn <- mean(log(historic.df$Rec))
-  #rlsd <- sd(log(historic.df$Rec))
-  
-  ## This function performs the a projection for each prescibed gamma.
+  #rlmn <- mean(log(recruit.df$Rec))
+  #rlsd <- sd(log(recruit.df$Rec))
+
+  ## Drop missing and out of range recruitment estimates
+  recruit.df <- recruit.df[(recruit.df$Year %in% seq(Year1,length.out=nrow(catch.df)+n.years)) &
+                             !is.na(recruit.df$Rec),]
+    
+  ## This function performs a projection for each prescribed gamma.
   function(run) {
 
-    
     ## Median spawning biomass estimated from 1000 samples
-    ##R <- matrix(prRecruits(1000*length(Msf),ps),1000,length(Msf))
-    ##ssb0 <- spawningB0S(R,gs,ws,Ms,M,spawn=spawnI)
+    R <- matrix(rlnorm(1000*(length(Msf)+plus),rlmn,rlsd),1000,length(Msf)+plus)
+    ssb0 <- spawningB0S(R,gs,ws,Ms,M,spawn=spawnI,plus=TRUE)
 
     ## Stochastic initial age structure in the absence of fishing
-    N0 <- ageStructureS(rlnorm(length(Msf),rlmn,rlsd),Msf,M)
-
-    ## Recruitment for projection period
-    Rs <- rlnorm(n.years,rlmn,rlsd)
-    
+    N0 <- ageStructureS(rlnorm(length(Msf)+plus,rlmn,rlsd),Msf,M,plus=TRUE)
+    ## Initial projection assuming no fishing
+    pr <- project(ws,MMs,Nref=N0,yield=0)
+    pr$F <- pr$Y <- 0
+  
+    ## Recruitment series - log Normal + known from survey
+    Rs <- rlnorm(nrow(catch.df)+n.years,rlmn,rlsd)
+    Rs[recruit.df$Year-Year1+1] <- recruit.df$Rec
+ 
     ## Annual summary quantities
-    n <- nrow(historic.df)+n.years*length(Catches)
+    n <- nrow(catch.df)+n.years*length(Catches)
+    Test<-rep(Catches, each=n/length(Catches))
     Year <- integer(n)
     Target <- R <- N <- B <- SSN <- SSB <- Catch <- F <- double(n)
     k <- 1
 
     ## Project over historic period
-    for(yr in 1:nrow(historic.df)) {    
+    for(yr in 1:nrow(catch.df)) {    
 
-      ## Compute fishing mortality when selectivity changes 
+      ## Recompute fishing mortality when selectivity changes 
       if(sel$index[yr]!=current.sel) {
         current.sel <- sel$index[yr]
         ss <- sel$ss[[current.sel]]
@@ -267,17 +278,17 @@ ToothfishProjection <- function(Catches,historic.df,length.df,n.years=35) {
       }
       
       ## Project over year
-      Year[k] <- historic.df$Year[yr]
-      Target[k] <- historic.df$Catch[yr]
-      R[k] <- historic.df$Rec[yr]
-      if(yr > 1) N0 <- advance(pr$N,R[k])
+      Year[k] <- catch.df$Year[yr]
+      Target[k] <- catch.df$Catch[yr]
+      R[k] <- Rs[yr]
+      N0 <- advance(pr$N,R[k],plus=TRUE)
       pr <- projectC(ws,MMs,Fs,fs,Target[k],Nref=N0,yield=1,Fmax=5,tol=1.0E-8)
-
+      
       ## Collate annual summaries
-      N[k] <- sum(final(pr$N))
-      B[k] <- sum(final(pr$B))
-      SSN[k] <- spawningStock(pr$N,ss,spawnI)
-      SSB[k] <- spawningStock(pr$B,ss,spawnI)
+      N[k] <- sum(initial(pr$N))
+      B[k] <- sum(initial(pr$B))
+      SSN[k] <- spawningStock(pr$N,gs,spawnI)
+      SSB[k] <- spawningStock(pr$B,gs,spawnI)
       Catch[k] <- sum(pr$Y)
       F[k] <- pr$F
       k <- k+1
@@ -285,46 +296,46 @@ ToothfishProjection <- function(Catches,historic.df,length.df,n.years=35) {
     
     ## Record pre-projection state
     pr0 <- pr
-    Year0 <- historic.df$Year[yr]
-
+    
     ## Set projection selectivity
     ss <- sel$ss[[1]]
     fs <- fwy*ss
     Fs <- ctrapz(fs,h)
-
-
+    
+    
     ## Project for each catch
     for(catch in Catches) {
       ## Reset to pre-projection state
       pr <- pr0
-
-      for(yr in 1:n.years) {
+      
+      
+      for(yr in seq(nrow(catch.df)+1,length.out = n.years)) {
         ## Project over year
-        N0 <- advance(pr$N,Rs[yr])
+        N0 <- advance(pr$N,Rs[yr],plus=TRUE)
         pr <- projectC(ws,MMs,Fs,fs,catch,Nref=N0,yield=1,Fmax=5,tol=1.0E-8)
         #if(pr$F==5) return(NULL)
 
         ## Collate annual summaries
-        Year[k] <- yr+Year0
+        Year[k] <- yr+Year1-1
         Target[k] <- catch
         R[k] <- Rs[yr]
-        N[k] <- sum(final(pr$N))
-        B[k] <- sum(final(pr$B))
-        SSN[k] <- spawningStock(pr$N,ss,spawnI)
-        SSB[k] <- spawningStock(pr$B,ss,spawnI)
+        N[k] <- sum(initial(pr$N))
+        B[k] <- sum(initial(pr$B))
+        SSN[k] <- spawningStock(pr$N,gs,spawnI)
+        SSB[k] <- spawningStock(pr$B,gs,spawnI)
         Catch[k] <- sum(pr$Y)
         F[k] <- pr$F
         k <- k+1
       }
     }
     data.frame(Run=run,M=M,Year=Year,Target=Target,
-               R=R,N=N,B=B,SSN=SSN,SSB=SSB,Catch=Catch,F=F)
+               R=R,N=N,B=B,SSN=SSN,SSB=SSB,SSB0=ssb0$median,Catch=Catch,F=F)
   }
 }
 
 ## -----------------------------------------------------------------------------
-sim <- ToothfishProjection(Catches=c(2.8e6,2.84e6,2.85e6,2.9e6,3e6,3.2e6),
-                           historic.df=historic.df,length.df=length.df)
+sim <- ToothfishProjection(Catches=c(0,2.8e6,2.84e6,2.85e6,2.9e6,3e6,3.2e6),
+                           catch.df=catch.df,recruit.df=recruit.df,length.df=length.df)
 
 ## -----------------------------------------------------------------------------
 df <- sim(1)
@@ -332,23 +343,70 @@ head(df)
 tail(df)
 
 ## -----------------------------------------------------------------------------
-library(ggplot2)
-library(dplyr)
 ggplot(df %>% filter(Year > 2005),aes(x=Year,y=N,colour=factor(Target)))+geom_line()
 
 ## -----------------------------------------------------------------------------
-library(furrr)
 plan(multiprocess)
-system.time(df <- future_map_dfr(1:101,sim))
+system.time(df <- future_map_dfr(1:100,sim))
 
 ## -----------------------------------------------------------------------------
 ggplot(df %>% filter(Year <= 2005),
        aes(x=Year,y=N,group=Run))+
-  geom_line(colour=rgb(0,0,0,0.1))+ylim(0,5E07)
+  geom_line(colour=rgb(0,0,0,0.1))+ylim(0,6E07)
 
-## -----------------------------------------------------------------------------
+## ----  fig.width=6,fig.height=12----------------------------------------------
 ggplot(df %>% filter(Year > 2005),
        aes(x=Year,y=N,group=Run))+
   geom_line(colour=rgb(0,0,0,0.1))+
-  facet_wrap(~Target,ncol=1)+ylim(0,5E07)
+  facet_wrap(~Target,ncol=1)+ylim(0,6E07)
+
+## -----------------------------------------------------------------------------
+grymssb<-df %>% 
+  filter(Year==2040) %>% 
+  mutate(Status=SSB/SSB0) %>% 
+  group_by(Target/1000) %>% 
+  summarise(q2.5=quantile(Status,0.025),
+            q45=quantile(Status,0.45),
+            q50=quantile(Status,0.50),
+            q55=quantile(Status,0.55),
+            q97.5=quantile(Status,0.975),
+            Median=median(Status)) %>% 
+  mutate(Model="Grym")
+
+grymssb
+
+## -----------------------------------------------------------------------------
+grymdep<-df %>% 
+  filter(Year>2006) %>%
+  group_by(Target/1000,Run) %>%
+  summarize(Status=min(SSB/SSB0)) %>% 
+  summarise(Depletion_prob=mean(Status <= 0.2))%>% 
+  mutate(Model="Grym")
+
+grymdep
+
+
+## -----------------------------------------------------------------------------
+ssbstat<-df %>% group_by(Target, Year) %>% filter(Year >= 2006) %>% 
+  mutate(SSB.Status=SSB/SSB0) %>% 
+  summarise(Med=median(SSB.Status), upr=quantile(SSB.Status, 0.975),lwr=quantile(SSB.Status, 0.025),q90=quantile(SSB.Status, 0.9),q10=quantile(SSB.Status, 0.1))
+
+## -----------------------------------------------------------------------------
+ssbstatstarts<-df %>% group_by(Year) %>% filter(Year <= 2006) %>% 
+  mutate(SSB.Status=SSB/SSB0) %>% 
+  summarise(Med=median(SSB.Status), upr=quantile(SSB.Status, 0.975),lwr=quantile(SSB.Status, 0.025),q90=quantile(SSB.Status, 0.9),q10=quantile(SSB.Status, 0.1))
+
+## -----------------------------------------------------------------------------
+ggplot()+
+  geom_ribbon(data=ssbstat,  aes(x=Year, ymin=lwr, ymax=upr), alpha=0.2)+
+  geom_ribbon(data=ssbstat, aes(x=Year, ymin=q10, ymax=q90), alpha=0.2)+
+geom_line(data=ssbstat, aes(x=Year, y=Med))+
+  facet_wrap(~Target/1000, scales = "free_y")+
+  scale_color_manual(values = c("red"))+
+  scale_fill_manual(values = c("red"))+
+  theme_bw()+
+  geom_ribbon(data=ssbstatstarts, aes(x=Year, ymin=lwr, ymax=upr), alpha=0.2)+
+  geom_ribbon(data=ssbstatstarts, aes(x=Year, ymin=q10, ymax=q90), alpha=0.2)+
+  geom_line(data=ssbstatstarts, aes(x=Year, y=Med)) +
+  labs(y="Spawning Stock Status")
 

@@ -2,7 +2,7 @@
 title: "Krill"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Krill}
+  %\VignetteIndexEntry{Krill_2010}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---

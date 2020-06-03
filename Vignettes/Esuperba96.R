@@ -136,11 +136,11 @@ library(ggplot2)
 library(dplyr)
 ggplot(df %>% mutate(Gamma=factor(Gamma)),aes(x=Year,y=N,colour=Gamma))+geom_line()
 
-## ---- eval=FALSE--------------------------------------------------------------
-#  plan(multiprocess)
-#  system.time(df <- future_map_dfr(1:101,sim))
-#  
-#  #saveRDS(df, "Esup96_sim.rds")
+## -----------------------------------------------------------------------------
+plan(multiprocess)
+system.time(df <- future_map_dfr(1:101,sim))
+
+#saveRDS(df, "Esup96_sim.rds")
 
 ## -----------------------------------------------------------------------------
 #df<-readRDS("Esup96_sim.rds")

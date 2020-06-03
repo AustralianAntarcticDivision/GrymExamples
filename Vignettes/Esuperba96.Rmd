@@ -3,7 +3,7 @@ title: "E. Superba"
 output: rmarkdown::html_vignette
 bibliography: Ref.bib
 vignette: >
-  %\VignetteIndexEntry{Esuperba96}
+  %\VignetteIndexEntry{Krill_1996}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---

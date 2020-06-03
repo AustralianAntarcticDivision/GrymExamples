@@ -30,7 +30,6 @@ GrymExamples does not otherwise require `remotes` for normal use.
 
 
 ## TODO
-* Make examples
 
 * Check examples for consistency of implementation
 
@@ -49,15 +48,16 @@ Like most stock assessment packages Grym wont warn you or stop you doing somethi
 ## Example
 
 To access a list of the examples run the following code: 
-```{r, eval=FALSE}
+
+```R
 vignette(package="GrymExamples")
 ```
+Specific examples can be accessed with the same function and specifying the topic for example
 
-
-To access a specific example run the following code with the example name such as: 
-```{r, eval=FALSE}
-vignette(topic="Krill96_1",package="GrymExamples")
+```R
+vignette(topic = "Icefish_2019", package="GrymExamples")
 ```
+
 
 ## References 
 Constable, AJ, and WK de la Mare. 1996. “A Generalised Model for Evaluating Yield and the Long-Term Status of Fish Stocks Under Conditions of Uncertainty.” CCAMLR Science 3: 31–54.
