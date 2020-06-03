@@ -1,5 +1,5 @@
 ---
-title: "Icefish_2019"
+title: "Icefish"
 output: rmarkdown::html_vignette
 bibliography: Ref.bib
 vignette: >
