@@ -3,7 +3,7 @@ title: "Icefish"
 output: rmarkdown::html_vignette
 bibliography: Ref.bib
 vignette: >
-  %\VignetteIndexEntry{Icefish_2019}
+  %\VignetteIndexEntry{Icefish}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
