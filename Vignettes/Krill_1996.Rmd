@@ -55,7 +55,7 @@ EsuperbaProjection <- function(gamma=c(0,0.1,0.136,0.15,0.2),n.years=20) {
   h <- 1/nsteps  #Proportion of the year for each time step. 
 
   ## Spawning and monitoring interval
-  spawnI <- 93:213  #Time steps that spawning occurs on. 
+  spawnI <- 121:213  #Time steps that spawning occurs on. 
   monitorI <- 92    #Time step of the monitoring interval. 
 
   ## Ages, length at age and weight at age
