@@ -152,3 +152,10 @@ library(ggplot2)
 library(dplyr)
 ggplot(df %>% mutate(Gamma=factor(Gamma)),aes(x=Year,y=N,colour=Gamma))+geom_line()
 
+## -----------------------------------------------------------------------------
+plan(multiprocess)
+system.time(df <- future_map_dfr(1:101,sim))
+
+## -----------------------------------------------------------------------------
+df %>% group_by(Gamma,Run) %>% summarize(Dep=min(SSB/SSB0)) %>% summarize(Pr=mean(Dep < 0.2))
+
