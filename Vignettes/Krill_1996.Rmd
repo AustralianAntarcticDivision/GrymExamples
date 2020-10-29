@@ -4,7 +4,7 @@ output: rmarkdown::html_vignette
 bibliography: Ref.bib
 vignette: >
   %\VignetteIndexEntry{Krill_1996}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEngine{rmarkdown::render}
   \usepackage[utf8]{inputenc}
 ---
 ```{r setup, echo=FALSE}

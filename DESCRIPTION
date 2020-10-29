@@ -12,15 +12,16 @@ License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 Date: 2020-06-01
 Imports:
     Grym, 
     furrr (>= 0.1.0)
 Suggests: 
     knitr,
-    rmarkdown,
     dplyr,
-    ggplot2
+    ggplot2,
+    rmarkdown
+Remotes: 
+    AustralianAntarcticDivision/Grym
 VignetteBuilder: knitr
-Remotes: AustralianAntarcticDivision/Grym
