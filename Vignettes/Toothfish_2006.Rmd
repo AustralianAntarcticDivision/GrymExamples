@@ -441,6 +441,7 @@ the `furrr` library. We use 100 runs here to show the concept most assessments w
 ```{r}
 plan(multiprocess)
 system.time(df <- future_map_dfr(1:100,sim))
+plan(sequential)
 ```
 
 ```{r}
