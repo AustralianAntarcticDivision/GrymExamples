@@ -1,17 +1,17 @@
 ---
-title: "Toothfish"
+title: "Toothfish 2006"
 output: rmarkdown::html_vignette
 bibliography: Ref.bib
 vignette: >
-  %\VignetteIndexEntry{Toothfish_2006}
-  %\VignetteEngine{rmarkdown::render}
-  \usepackage[utf8]{inputenc}
+  %\VignetteIndexEntry{Toothfish 2006}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = NA,
+  comment = "#>",
   fig.width=6,
   fig.height=5
 )
@@ -20,7 +20,6 @@ knitr::opts_chunk$set(
 ## Toothfish Assessment
 
 This document aims to reproduce a Toothfish assessment.
-
 
 ```{r}
 library(Grym)

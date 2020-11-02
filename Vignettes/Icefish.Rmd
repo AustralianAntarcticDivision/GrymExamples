@@ -5,13 +5,13 @@ bibliography: Ref.bib
 vignette: >
   %\VignetteIndexEntry{Icefish}
   %\VignetteEngine{knitr::rmarkdown}
-  \usepackage[utf8]{inputenc}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = NA,
+  comment = "#>",
   fig.width=6,
   fig.height=5
 )

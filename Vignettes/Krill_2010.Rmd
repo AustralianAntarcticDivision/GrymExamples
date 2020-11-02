@@ -1,16 +1,16 @@
 ---
-title: "Krill_2010"
+title: "Krill 2010"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Krill_2010}
+  %\VignetteIndexEntry{Krill 2010}
   %\VignetteEngine{knitr::rmarkdown}
-  \usepackage[utf8]{inputenc}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = NA,
+  comment = "#>",
   fig.width=6,
   fig.height=5
 )
@@ -52,8 +52,6 @@ R.var <- 0.1^2
 R.class <- 3
 R.nsurveys <- 17
 ```
-
-
 
 
 ## Model
