@@ -195,7 +195,7 @@ Generate 1000 runs and bind them into one large dataframe.  The runs are perform
 the `furrr` library
 ```{r}
 plan(multiprocess)
-system.time(df <- future_map_dfr(1:101,sim))
+system.time(df <- future_map_dfr(1:101,sim,.options = future_options(seed = TRUE)))
 plan(sequential)
 ```
 

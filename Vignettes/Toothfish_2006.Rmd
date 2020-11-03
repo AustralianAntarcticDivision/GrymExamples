@@ -430,6 +430,7 @@ df <- sim(1)
 head(df)
 tail(df)
 ```
+
 For these parameters, the recruitment variability has greater impact than increased fishing pressure
 ```{r}
 ggplot(df %>% filter(Year > 2005),aes(x=Year,y=N,colour=factor(Target)))+geom_line()
@@ -439,7 +440,7 @@ Generate 100 runs and bind them into one large dataframe. The runs are performed
 the `furrr` library. We use 100 runs here to show the concept most assessments would have a lot more, eg 10,000
 ```{r}
 plan(multiprocess)
-system.time(df <- future_map_dfr(1:100,sim))
+system.time(df <- future_map_dfr(1:100,sim,.options = future_options(seed = TRUE)))
 plan(sequential)
 ```
 
