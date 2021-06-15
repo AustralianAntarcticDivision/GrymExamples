@@ -96,7 +96,8 @@ KrillProjection <- function(R.mean,R.var,R.class,R.nsurveys,
   fwy <- fwy/mean(fwy)
   ## Recruitment survey - parameters for the observed ratios
   ps0 <- prRecruitPars(Msf,R.mean,R.var,r=R.class)
-  B0logsd <- 0.2
+  ## Future modeled survey CV - The amount of variation or measurement error to put around B0 calculations in future projections. 
+  FutureSurveyCV <- 0.2
   
   ## This function performs the a projection for each prescibed gamma.
   function(run) {
@@ -133,7 +134,7 @@ KrillProjection <- function(R.mean,R.var,R.class,R.nsurveys,
     pr0$F <- pr0$Y <- 0
     ## Initial biomass in monitoring period + log Normal error
     b0 <- meanStock(pr0$B,period=monitorI)
-    b0 <- rlnorm(1,log(b0)-B0logsd^2/2,B0logsd)
+    b0 <- rlnorm(1,log(b0)-FutureSurveyCV^2/2,FutureSurveyCV)
     
     k <- 0
     ## Project for each gamma ratio

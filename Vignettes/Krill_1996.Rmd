@@ -68,7 +68,8 @@ EsuperbaProjection <- function(gamma=c(0,0.1,0.136,0.15,0.2),n.years=20) {
   fwy[31:120] <- 1 #Set the time steps of the fishing season to 1 
   fwy <- fwy/trapz(fs=fwy, h=h) #Scale the f in the fishing period to be 1 across the year
 
-  B0logsd <- sqrt(log(1+0.3^2))
+  ## Future modeled survey CV - The amount of variation or measurement error to put around B0 calculations in future projections. 
+  FutureSurveyCV <- sqrt(log(1+0.3^2))
   
   ## This function performs the a projection for each prescibed gamma.
   function(run) {
@@ -112,7 +113,7 @@ EsuperbaProjection <- function(gamma=c(0,0.1,0.136,0.15,0.2),n.years=20) {
     
     ## Initial biomass in monitoring period + log Normal error
     b0 <- meanStock(P=pr0$B, period=monitorI)
-    b0 <- rlnorm(n=1, meanlog = log(b0)-B0logsd^2/2, sdlog = B0logsd)
+    b0 <- rlnorm(n=1, meanlog = log(b0)-FutureSurveyCV^2/2, sdlog = FutureSurveyCV)
     
     k <- 0
     ## Project for each gamma ratio
