@@ -177,7 +177,7 @@ Generate 101 runs and bind them into one large dataframe.  The runs are performe
 the `furrr` library
 ```{r}
 plan(multiprocess)
-system.time(df <- future_map_dfr(1:101,sim,.options = future_options(seed = TRUE)))
+system.time(df <- future_map_dfr(1:101,sim,.options = furrr_options(seed = TRUE)))
 plan(sequential)
 #saveRDS(df, "Esup96_sim.rds")
 ```
